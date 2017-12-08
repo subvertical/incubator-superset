@@ -17,12 +17,13 @@ import sqlalchemy as sqla
 
 from flask import (
     g, request, redirect, flash, Response, render_template, Markup,
-    abort, url_for)
+    abort, url_for, jsonify)
 from flask_appbuilder import expose
 from flask_appbuilder.actions import action
 from flask_appbuilder.models.sqla.interface import SQLAInterface
 from flask_appbuilder.security.decorators import has_access_api
 from flask_appbuilder.security.sqla import models as ab_models
+from flask_appbuilder.models.sqla.filters import FilterInFunction
 
 from flask_babel import gettext as __
 from flask_babel import lazy_gettext as _
@@ -168,6 +169,26 @@ def generate_download_headers(extension):
     return headers
 
 
+def visible_databases():
+    # Only show the databases the user has permission to use:
+    roles = get_user_roles()
+    print("roles: %r" % roles)
+    perms = set()
+    for role in roles:
+        _perms = {p.view_menu.name for p in role.permissions
+                  if p.permission.name in ['all_database_access', 'database_access']}
+        perms = perms.union(_perms)
+
+    print("perms: %r" % perms)
+    role_names_set = {r.name for r in roles}
+    # Hmm, I don't like hardcoding the meaning of "Admin" and "Alpha" here,
+    # but I'm following the approach in https://github.com/apache/incubator-superset/pull/3414/files
+    if role_names_set.intersection(['Admin', 'Alpha']) or 'all_database_access' in perms:
+        return [d.perm for d in db.session.query(models.Database).all()]
+    else:
+        perms.discard('all_database_access')
+        return perms
+
 class DatabaseView(SupersetModelView, DeleteMixin):  # noqa
     datamodel = SQLAInterface(models.Database)
 
@@ -201,6 +222,9 @@ class DatabaseView(SupersetModelView, DeleteMixin):  # noqa
     ]
     add_template = "superset/models/database/add.html"
     edit_template = "superset/models/database/edit.html"
+    base_filters = [
+        ['perm', FilterInFunction, visible_databases]
+    ]
     base_order = ('changed_on', 'desc')
     description_columns = {
         'sqlalchemy_uri': utils.markdown(
