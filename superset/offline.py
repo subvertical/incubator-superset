@@ -111,3 +111,24 @@ def create_database_roles():
         query = create_database_permission_role_template.format(database=database)
         run_superset_backend_query(query)
 
+def create_database(name, sql_username, password):
+    session = Session()
+
+    db = Database(
+        database_name=name,
+        sqlalchemy_uri="postgresql+psycopg2://%s:%s@10.0.21.10/reporting_%s" % (sql_username, password, sql_username),
+        extra='{"metadata_params": {}, "engine_params": {}}',
+        expose_in_sqllab=True,
+        allow_run_sync=True,
+        allow_run_async=False,
+        allow_ctas=False,
+        allow_dml=False)
+
+    db.set_sqlalchemy_uri(db.sqlalchemy_uri)
+    security.merge_perm(sm, 'database_access', db.perm)
+    for schema in db.all_schema_names():
+        security.merge_perm(
+            sm, 'schema_access', utils.get_schema_perm(db, schema))
+
+    session.add(db)
+    session.commit()
