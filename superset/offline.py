@@ -56,7 +56,11 @@ def create_all_tables_for_database(database_id):
     for table_name in find_views_in_database(database_id):
         t = SqlaTable(database_id=database_id, schema='public', table_name=table_name)
         t.database = db     # If we don't do this then we get rows in ab_view_menu that start with `[None]` instead of `[$database_name]`.
+        # This will create the table's entry in ab_view_menu:
         session.add(t)
+        # This will create the entries in ab_permission_view:
+        superset.security.merge_perm(superset.sm, 'datasource_access', t.get_perm())
+        superset.security.merge_perm(superset.sm, 'schema_access', t.schema_perm)
 
     session.commit()
 
