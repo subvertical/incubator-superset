@@ -155,6 +155,40 @@ Resources
 * [Slides from Strata (March 2016)](https://drive.google.com/open?id=0B5PVE0gzO81oOVJkdF9aNkJMSmM)
 
 
+Permissions
+-----------
+
+Here are the tables to manage permissions:
+
+```
+ab_role             ab_permission_view_role
+-------             -----------------------
+10 Hospice  -----<  role_id
+13 CCRC             permission_view_id  >-+
+                                          |
+                                          |
+                                          |    ab_permission_view
+ab_view_menu                              |    ------------------         ab_permission
+------------                              +--  id                         -------------
+                                               permission_id  ---------<  60 datasource_access
+id                 >-------------------------  view_menu_id               63 database_access
+name:
+  [None].[Some Query](id:686)                                          dbs
+  [CCRC].(id:5)                                                        ---
+  [Hospice].(id:6)  -------------------------------------------------- id
+  [Hospice].[public]                                                   database_name
+  [Hospice].[fdw]                                  tables              5 CCRC
+  [Hospice].[information_schema]                   ------              6 Hospice
+  [Hospice].[contacts](id:227)  -----------------  id
+  [Hospice].[programs](id:241)                     table_name
+  [Hospice].[cfs_intake_illness](id:238)           sql
+  [Hospice].[Some Query](id:438)  ---------------  perm
+```
+
+So `ab_view_menu.name` may point to a database id, but usually it points to `tables.perm`
+(which holds both actual tables and any SQL queries you've run in SQL Lab).
+
+
 Contributing
 ------------
 
