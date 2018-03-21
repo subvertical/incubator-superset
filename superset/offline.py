@@ -9,6 +9,7 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 import superset
+from superset import security, sm, utils
 from superset.connectors.sqla.models import SqlaTable
 from superset.models.core import Database
 
@@ -51,11 +52,11 @@ def find_views_in_database(database_id):
 def create_all_tables_for_database(database_id):
     session = Session()
 
+    db = session.query(Database).filter_by(id=database_id).one()
     for table_name in find_views_in_database(database_id):
         t = SqlaTable(database_id=database_id, schema='public', table_name=table_name)
+        t.database = db     # If we don't do this then we get rows in ab_view_menu that start with `[None]` instead of `[$database_name]`.
         session.add(t)
-        superset.security.merge_perm(superset.sm, 'datasource_access', t.get_perm())
-        superset.security.merge_perm(superset.sm, 'schema_access', t.schema_perm)
 
     session.commit()
 
@@ -67,7 +68,7 @@ def create_database_roles():
     """Create roles for databases access
 
     - for each database defined in superset
-    - for all datasource defined in superset, associated to a database
+    - for all datasources defined in superset, associated to a database
     """
 
     create_database_role_template = """
