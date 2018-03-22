@@ -1,0 +1,7 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+import superset.offline
+
+if __name__ == "__main__":
+  superset.offline.update_permissions_for_all_databases()

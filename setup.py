@@ -40,7 +40,7 @@ setup(
     packages=find_packages(),
     include_package_data=True,
     zip_safe=False,
-    scripts=['superset/bin/superset'],
+    scripts=['superset/bin/superset', 'superset/bin/update_all_database_permissions'],
     install_requires=[
         'boto3==1.4.4',
         'celery==3.1.25',
