@@ -64,13 +64,9 @@ def create_all_tables_for_database(database_id):
 
     session.commit()
 
-def get_database_names():
+def get_databases():
     session = Session()
-    return [d.name for d in session.query(Database).all()]
-
-def get_database_ids():
-    session = Session()
-    return [d.id for d in session.query(Database).all()]
+    return [(d.id, d.name) for d in session.query(Database).all()]
 
 def create_database_roles():
     """Create roles for databases access
@@ -113,7 +109,7 @@ def create_database_roles():
                             FROM    ab_permission_view_role pvr2
                             WHERE   (pvr2.role_id, pvr2.permission_view_id) = (ab_role.id, ab_permission_view.id))
     """
-    for database in get_database_names():
+    for (_database_id, database) in get_databases():
         query = create_database_role_template.format(database=database)
         run_superset_backend_query(query)
         query = create_database_permission_role_template.format(database=database)
@@ -123,9 +119,11 @@ def update_permissions_for_all_databases():
     """Updates all reporting databases so their roles include permissions for every table in their reporting schema.
     We should call this out of cron every hour or so (or even more frequently).
     """
-    for database_id in get_database_ids():
-        create_all_tables_for_database(database_id)
-
+    for (database_id, database_name) in get_databases():
+        if database_name == 'main':
+            pass
+        else:
+            create_all_tables_for_database(database_id)
     create_missing_database_access_permission_view()
     create_database_roles()
 
