@@ -68,6 +68,10 @@ def get_database_names():
     session = Session()
     return [d.name for d in session.query(Database).all()]
 
+def get_database_ids():
+    session = Session()
+    return [d.id for d in session.query(Database).all()]
+
 def create_database_roles():
     """Create roles for databases access
 
@@ -115,6 +119,16 @@ def create_database_roles():
         query = create_database_permission_role_template.format(database=database)
         run_superset_backend_query(query)
 
+def update_permissions_for_all_databases():
+    """Updates all reporting databases so their roles include permissions for every table in their reporting schema.
+    We should call this out of cron every hour or so (or even more frequently).
+    """
+    for database_id in get_database_ids():
+        create_all_tables_for_database(database_id)
+
+    create_missing_database_access_permission_view()
+    create_database_roles()
+
 def create_database(name, sql_username, password):
     session = Session()
 
@@ -136,3 +150,20 @@ def create_database(name, sql_username, password):
 
     session.add(db)
     session.commit()
+    return db.id
+
+def add_reporting_database(name, sql_username, password):
+    """Adds a new reporting database to Superset
+    and sets up a Role with permissions to use it.
+    Once you do this, cron will keep the Datasources and Role up-to-date
+    even if you add slugs to more forms in Vertical Change.
+
+    It would be really nice to also do an `ALTER USER foo WITH PASSWORD bar` right here,
+    but Superset only has a readonly connection to the main VC database,
+    and it's probably best to keep it that way.
+    So we'll keep that manual for now....
+    """
+    database_id = create_database(name, sql_username, password)
+    create_all_tables_for_database(database_id)
+    create_missing_database_access_permission_view()
+    create_database_roles()
