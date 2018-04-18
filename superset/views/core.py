@@ -169,17 +169,21 @@ def generate_download_headers(extension):
     return headers
 
 
+def visible_database_ids():
+    db_perm_regex = re.compile(r'\:(\d+)\)$')
+    return [
+        int(db_perm_regex.search(perm).group(1)) for perm in visible_databases()
+    ]
+
 def visible_databases():
     # Only show the databases the user has permission to use:
     roles = get_user_roles()
-    print("roles: %r" % roles)
     perms = set()
     for role in roles:
         _perms = {p.view_menu.name for p in role.permissions
                   if p.permission.name in ['all_database_access', 'database_access']}
         perms = perms.union(_perms)
 
-    print("perms: %r" % perms)
     role_names_set = {r.name for r in roles}
     # Hmm, I don't like hardcoding the meaning of "Admin" and "Alpha" here,
     # but I'm following the approach in https://github.com/apache/incubator-superset/pull/3414/files
@@ -2212,6 +2216,7 @@ class Superset(BaseSupersetView):
     def search_queries(self):
         """Search for queries."""
         query = db.session.query(Query)
+        query = query.filter(Database.id.in_(visible_database_ids()))
         search_user_id = request.args.get('user_id')
         database_id = request.args.get('database_id')
         search_text = request.args.get('search_text')
