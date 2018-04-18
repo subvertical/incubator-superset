@@ -653,7 +653,12 @@ class Database(Model, AuditMixinNullable):
         return views
 
     def all_schema_names(self):
-        return sorted(self.inspector.get_schema_names())
+        return sorted(
+                [
+                    sch for sch in self.inspector.get_schema_names()
+                    if (sch != 'information_schema' and sch != 'fdw')
+                ]
+            )
 
     @property
     def db_engine_spec(self):
