@@ -2216,7 +2216,7 @@ class Superset(BaseSupersetView):
     def search_queries(self):
         """Search for queries."""
         query = db.session.query(Query)
-        query = query.filter(models.Database.id.in_(visible_database_ids()))
+        query = query.filter(Query.database_id.in_(visible_database_ids()))
         search_user_id = request.args.get('user_id')
         database_id = request.args.get('database_id')
         search_text = request.args.get('search_text')
