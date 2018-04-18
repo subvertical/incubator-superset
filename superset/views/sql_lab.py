@@ -2,6 +2,7 @@ from flask import redirect, g
 
 from flask_appbuilder import expose
 from flask_appbuilder.models.sqla.interface import SQLAInterface
+from flask_appbuilder.models.sqla.filters import FilterInFunction
 
 from flask_babel import gettext as __
 from flask_babel import lazy_gettext as _
@@ -9,6 +10,7 @@ from flask_babel import lazy_gettext as _
 from superset import appbuilder
 from superset.models.sql_lab import Query, SavedQuery
 from .base import SupersetModelView, BaseSupersetView, DeleteMixin
+from .core import visible_database_ids
 
 
 class QueryView(SupersetModelView):
@@ -41,6 +43,9 @@ class SavedQueryView(SupersetModelView, DeleteMixin):
     search_columns = ('label', 'user', 'database', 'schema', 'changed_on')
     add_columns = ['label', 'database', 'description', 'sql']
     edit_columns = add_columns
+    base_filters = [
+        ['db_id', FilterInFunction, visible_database_ids]
+    ]
     base_order = ('changed_on', 'desc')
 
     def pre_add(self, obj):
