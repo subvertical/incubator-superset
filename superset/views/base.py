@@ -146,7 +146,7 @@ class BaseSupersetView(BaseView):
         subset = set()
         for schema in schemas:
             schema_perm = utils.get_schema_perm(database, schema)
-            if self.can_access('schema_access', schema_perm):
+            if not (schema_perm.endswith(".[information_schema]") or schema_perm.endswith(".[fdw]")) and self.can_access('schema_access', schema_perm):
                 subset.add(schema)
 
         perms = self.user_datasource_perms()
