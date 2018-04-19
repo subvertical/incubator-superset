@@ -46,7 +46,7 @@ def find_views_in_database(database_id):
 
     db = session.query(Database).filter_by(id=database_id).one()
     eng = db.get_sqla_engine()
-    sql = "SELECT viewname FROM pg_views WHERE schemaname = 'public'"
+    sql = "SELECT matviewname FROM pg_matviews WHERE schemaname = 'public'"
     return {row[0] for row in eng.execute(sql)} - already_exists
 
 def create_all_tables_for_database(database_id):
